@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="dark">
+  <title>วิดีโอคู่มือ AiAppX</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; }
+    body { display: grid; place-items: center; min-height: 100vh; padding: 18px; background: #080f1e; color: #eef4ff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { width: min(100%, 1120px); }
+    .player { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid #293850; border-radius: 14px; background: #000; box-shadow: 0 18px 60px #0008; }
+    iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .message { display: grid; place-content: center; gap: 10px; width: 100%; height: 100%; padding: 24px; color: #bdc9dc; text-align: center; }
+    .message strong { color: #f2c83d; font-size: 17px; }
+    .message p { margin: 0; font-size: 14px; line-height: 1.6; }
+    .message code { color: #fff; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main aria-label="เครื่องเล่นวิดีโอคู่มือ AiAppX">
+    <div class="player" id="player">
+      <div class="message"><strong>กำลังตรวจสอบลิงก์วิดีโอ…</strong></div>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const container = document.getElementById('player');
+      const fail = (message) => {
+        const box = document.createElement('div');
+        box.className = 'message';
+        const title = document.createElement('strong');
+        title.textContent = 'เปิดวิดีโอไม่ได้';
+        const detail = document.createElement('p');
+        detail.textContent = message;
+        box.append(title, detail);
+        container.replaceChildren(box);
+      };
+      const raw = new URLSearchParams(location.search).get('url') || new URLSearchParams(location.search).get('yt');
+      if (!raw) { fail('กรุณาระบุ URL ของ YouTube ด้วยพารามิเตอร์ ?url='); return; }
+      let source;
+      try { source = new URL(raw); } catch { fail('รูปแบบ URL ไม่ถูกต้อง'); return; }
+      if (source.protocol !== 'https:') { fail('รองรับเฉพาะ URL ของ YouTube ที่ขึ้นต้นด้วย https://'); return; }
+      const host = source.hostname.toLowerCase().replace(/^www\./, '');
+      const segments = source.pathname.split('/').filter(Boolean);
+      let videoId = '';
+      if (host === 'youtu.be') videoId = segments[0] || '';
+      else if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+        if (source.pathname === '/watch') videoId = source.searchParams.get('v') || '';
+        else if (['embed', 'shorts', 'live'].includes(segments[0] || '')) videoId = segments[1] || '';
+      }
+      if (!/^[\w-]{6,20}$/.test(videoId)) { fail('ไม่พบ Video ID ที่รองรับใน URL นี้'); return; }
+      const params = new URLSearchParams();
+      const list = source.searchParams.get('list');
+      if (list) params.set('list', list);
+      const frame = document.createElement('iframe');
+      frame.title = 'วิดีโอคู่มือ AiAppX';
+      frame.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}${params.size ? `?${params}` : ''}`;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.allowFullscreen = true;
+      container.replaceChildren(frame);
+    })();
+  </script>
+</body>
+</html>
